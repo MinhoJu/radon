@@ -13,10 +13,13 @@ GET_REAL_COMPLEXITY = operator.attrgetter('real_complexity')
 NAMES_GETTER = operator.attrgetter('name', 'asname')
 GET_ENDLINE = operator.attrgetter('endline')
 
+# print("----------------------- SAM : START -----------------------")
 BaseFunc = collections.namedtuple('Function', ['name', 'lineno', 'col_offset',
                                                'endline', 'is_method',
                                                'classname', 'closures',
-                                               'complexity'])
+                                               'complexity', 'cloc'])
+# print("----------------------- SAM : END    -----------------------")
+
 BaseClass = collections.namedtuple('Class', ['name', 'lineno', 'col_offset',
                                              'endline', 'methods',
                                              'inner_classes',
@@ -141,6 +144,11 @@ class ComplexityVisitor(CodeVisitor):
         self.no_assert = no_assert
         self._max_line = float('-inf')
 
+        #print("----------------------- SAM : START -----------------------")
+        self.func_line_numbers = set()
+        #print("----------------------- SAM : END   -----------------------")
+
+
     @property
     def functions_complexity(self):
         '''The total complexity from all functions (i.e. the total number of
@@ -193,6 +201,13 @@ class ComplexityVisitor(CodeVisitor):
         '''Main entry point for the visitor.'''
         # Get the name of the class
         name = self.get_name(node)
+
+        if hasattr(node, 'lineno'):
+            # print("----------------------- SAM : START -----------------------")
+            # print(node, name, node.lineno)
+            self.func_line_numbers.add(node.lineno)
+            # print("----------------------- SAM : END   -----------------------")
+
         # Check for a lineno attribute
         if hasattr(node, 'lineno'):
             self.max_line = node.lineno
@@ -240,6 +255,11 @@ class ComplexityVisitor(CodeVisitor):
         # double).
         closures = []
         body_complexity = 1
+
+        # print("----------------------- SAM : START -----------------------")
+        total_lines = 0
+        #print("----------------------- SAM : END   -----------------------")
+
         for child in node.body:
             visitor = ComplexityVisitor(off=False, no_assert=self.no_assert)
             visitor.visit(child)
@@ -247,9 +267,20 @@ class ComplexityVisitor(CodeVisitor):
             # Add general complexity but not closures' complexity, see #68
             body_complexity += visitor.complexity
 
+            #print("----------------------- SAM : START -----------------------")
+            # print(visitor.func_line_numbers)
+            total_lines += len(visitor.func_line_numbers)
+            # line_numbers_set.add(visitor.)
+            #print("----------------------- SAM : END   -----------------------")
+
         func = Function(node.name, node.lineno, node.col_offset,
                         max(node.lineno, visitor.max_line), self.to_method,
-                        self.classname, closures, body_complexity)
+                        self.classname, closures, body_complexity, total_lines)
+
+        print("----------------------- SAM : START -----------------------")
+        print(str(func), total_lines)
+        print("----------------------- SAM : END   -----------------------")
+
         self.functions.append(func)
 
     def visit_ClassDef(self, node):

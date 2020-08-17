@@ -157,6 +157,11 @@ class CCHarvester(Harvester):
                 continue
             values = [v for v in map(cc_to_dict, data)
                       if self.config.min <= v['rank'] <= self.config.max]
+
+            # print("----------------------- SAM : START -----------------------")
+            # print(key, values)
+            # print("----------------------- SAM : END   -----------------------")
+
             if values:
                 result[key] = values
         return result
